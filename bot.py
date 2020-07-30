@@ -20,7 +20,6 @@ async def on_ready():
 
 @client.event 
 async def on_guild_join(guild):
-    create_starboard(guild)
     starboard = find(lambda x: x.name == 'starboard', guild.text_channels)
     if not starboard:
         await guild.create_text_channel('starboard')

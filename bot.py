@@ -15,6 +15,7 @@ reacts_required = 2
 
 @client.event
 async def on_ready():
+    await client.change_presence(status = discord.Status.online, activity=discord.Activity(type=discord.ActivityType.playing, name = "I love Neeko :)"))
     print("Bot is online.")
 
 @client.event 

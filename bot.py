@@ -31,6 +31,7 @@ async def on_guild_join(guild):
 async def on_raw_reaction_add(payload):
     emote = str(payload.emoji)
     if emote == "⭐":
+
         #Gather all data: the message the user reacted to, the server it's in, the channel it's in, etc.
         #All data necessary to create the embed.
         channel = client.get_channel(payload.channel_id)
@@ -43,6 +44,11 @@ async def on_raw_reaction_add(payload):
         if message.attachments:
             attached = message.attachments[0].url
 
+        #Create starboard channel if not already created
+        starboard = find(lambda x: x.name == 'starboard', guild.text_channels)
+        if not starboard:
+            starboard = await guild.create_text_channel('starboard')
+
         #Check # of star reactions. If more than reacts_required, return. (But I still need to check if it needs to be added. There has been a problem where if people happen to react at the same time, it won't get added to #starboard.)
         reaction = None
         for react in message.reactions:
@@ -50,14 +56,14 @@ async def on_raw_reaction_add(payload):
                 reaction = react
         if not reaction:
             return
-        
-        if reaction.count < reacts_required or reaction.count > reacts_required: 
-          message_id = payload.message_id
-          str_id = str(message_id)
-          starboard = find(lambda x: x.name == 'starboard', guild.text_channels)
-          message = None
 
+        # Return if < reacts_required
+        if reaction.count < reacts_required:
+          return
 
+        # If > reacts_required, first check if message has already been sent 
+        # If it's already been sent, return. 
+        if reaction.count > reacts_required: 
           async for msg in starboard.history(limit=20):
               embed = msg.embeds
               if msg.author != client.user: 
@@ -65,10 +71,10 @@ async def on_raw_reaction_add(payload):
               if not embed:
                   continue
               embed = embed[0]
-              if str_id in str(embed.footer):
+              if str(message_id) in str(embed.footer):
                   message = msg
                   break
-          if message != None:
+          if message:
               return
 
         #Get date
@@ -77,10 +83,7 @@ async def on_raw_reaction_add(payload):
         local_tz.normalize(local_dt)
         timestamp = str(local_dt)[:10]
 
-        #Create starboard channel if not already created
-        starboard = find(lambda x: x.name == 'starboard', guild.text_channels)
-        if not starboard:
-            starboard = await guild.create_text_channel('starboard')
+
 
         #Create embed
         nico = f"{(await client.fetch_user(nico_id)).name}#{str((await client.fetch_user(nico_id)).discriminator)}"
@@ -96,6 +99,7 @@ async def on_raw_reaction_add(payload):
 
         embed.set_footer(text=f"⭐ | {message_id} • {timestamp} (PDT) | {nico}")
         await starboard.send(embed=embed)
+    #For fun 
     elif emote == "😡": 
       channel = client.get_channel(payload.channel_id)
       message_id = payload.message_id
@@ -121,7 +125,7 @@ async def on_raw_reaction_remove(payload):
         str_id = str(message_id)
         guild = client.get_guild(payload.guild_id)
         message = await channel.fetch_message(message_id)
-        #Check # of star reactions. If less than reacts_required, 
+        #Check # of star reactions. If less than reacts_required, remove 
         reaction = None
         starboard = find(lambda x: x.name == 'starboard', guild.text_channels)
         if not starboard:
@@ -132,7 +136,7 @@ async def on_raw_reaction_remove(payload):
         #Find the message to remove
         if not reaction or reaction.count < reacts_required:
             message = None
-            async for msg in starboard.history(limit=200):
+            async for msg in starboard.history(limit=None):
                 embed = msg.embeds
                 if msg.author != client.user: 
                     continue

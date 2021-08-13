@@ -63,7 +63,8 @@ async def on_raw_reaction_add(payload):
 
         # If > reacts_required, first check if message has already been sent 
         # If it's already been sent, return. 
-        if reaction.count > reacts_required: 
+        if reaction.count >= reacts_required: 
+          testMessage = None
           async for msg in starboard.history(limit=20):
               embed = msg.embeds
               if msg.author != client.user: 
@@ -72,10 +73,11 @@ async def on_raw_reaction_add(payload):
                   continue
               embed = embed[0]
               if str(message_id) in str(embed.footer):
-                  message = msg
+                  testMessage = msg
                   break
-          if message:
-              return
+          if testMessage:
+            print("here)")
+            return
 
         #Get date
         timestamp = message.created_at
